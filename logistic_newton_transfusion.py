@@ -10,9 +10,26 @@ train_size=1000
 panel=1
 def sigmoid(x):
     return 1.0/(np.exp(-x)+1.0)
+def Hypothesis(theta,x,row):
+    hypo=np.zeros((row,1))
+    for i in range(0,row):
+        temp=np.exp(-np.dot(theta.T,x[i].T))
+        hypo[i,:]=[1/(1+temp)]
+    return hypo
+def denominator(hypo,row):
+    temp=np.zeros((row,1))
+    temp.fill(1)
+    temp=temp-hypo
+    temp=np.dot(hypo.T,temp)
+    return temp
+def numerator(hypo,y,x):
+    temp=y-hypo
+    temp=np.dot(temp.T,x)
+    return temp.T
 def Eriri(y,calc_y):
     loss=0.0
     for i in range(0,len(y)):
+        #print(calc_y[i])
         if y[i]==1:
             loss+=-math.log(calc_y[i])
         else:
@@ -30,45 +47,46 @@ def Eriri_with_panelty(y,calc_y,theta):
     for i in range(0,len(theta_)):
         res+=theta_[i]*theta_[i]*panel
     return loss+math.sqrt(res)
-def BGD(matX,y):
-    X=np.array(matX)
-    theta=np.mat(np.ones((X.shape[1],1)).reshape((X.shape[1],1)))
-    eriri=0.0;cnt=1
-    y=np.array(y).reshape(len(y),1)
+def newton(X,y):
+    temp_X=(X.T*X).I
+    n=len(y);cnt=1
+    theta=np.mat(np.zeros((X.shape[1],1)))
+    eriri=0.0
     while True:
-        #update w(named as theta)
+        temp_hypo=Hypothesis(theta,X,n)
+        temp_denominator=denominator(temp_hypo,n)
+        temp_numerator=numerator(temp_hypo,y,X)
+        theta=theta+np.dot(temp_X,temp_numerator)/temp_denominator
+        #print(theta)
         temp_x=sigmoid(X*theta)
-        theta=theta-alpha*(X.T*(temp_x-y))
-        #calculate the new loss
-        temp_x=sigmoid(X*theta)
+        #print(temp_x)
         new_eriri=Eriri(y,temp_x)
-        #output the current loss
         if cnt%1000==0:
             print("%06d    %.8f"%(cnt,new_eriri))
         if abs(eriri-new_eriri)<=eps:
             break
         eriri=new_eriri;cnt+=1
     return theta
-def BGD_penalty(matX,y):
-    X=np.array(matX)
-    theta=np.mat(np.ones((X.shape[1],1)).reshape((X.shape[1],1)))
-    eriri=0.0;cnt=1
-    y=np.array(y).reshape(len(y),1)
+def newton_p(X,y):
+    temp_X=(X.T*X).I
+    n=len(y);cnt=1
+    theta=np.mat(np.zeros((X.shape[1],1)))
+    eriri=0.0
     while True:
-        #update w(named as theta)
+        temp_hypo=Hypothesis(theta,X,n)
+        temp_denominator=denominator(temp_hypo,n)
+        temp_numerator=numerator(temp_hypo,y,X)
+        theta=theta+np.dot(temp_X,temp_numerator)/temp_denominator
+        #print(theta)
         temp_x=sigmoid(X*theta)
-        theta=theta-alpha*(X.T*(temp_x-y))
-        #calculate the new loss
-        temp_x=sigmoid(X*theta)
+        #print(temp_x)
         new_eriri=Eriri_with_panelty(y,temp_x,theta)
-        #output the current loss
         if cnt%1000==0:
             print("%06d    %.8f"%(cnt,new_eriri))
         if abs(eriri-new_eriri)<=eps:
             break
         eriri=new_eriri;cnt+=1
     return theta
-
 if __name__=="__main__":
     parser=argparse.ArgumentParser(description="logistic with BGD")
     parser.add_argument("--data",action="store",type=str,default="data.txt",dest="arg_data")
@@ -88,14 +106,17 @@ if __name__=="__main__":
     for line in lines:
         piece=line.split()
         item_x=[float(j) for j in piece]
+        item_x[0]/=5.0
+        item_x[1]/=5.0
+        item_x[2]/=500.0
+        item_x[3]/=20.0
         item_x.append(1.0)
         X.append(item_x)
     X=np.mat(X)
     #print(X)
-    label=np.array(label)
-    #print(label)
-    theta=BGD(X,label)
-    theta_p=BGD_penalty(X,label)
+    label=np.mat(np.array(label).reshape((len(label),1)))
+    theta=newton(X,label)
+    theta_p=newton_p(X,label)
     print(theta)
     print(theta_p)
     f1.close()
@@ -108,6 +129,10 @@ if __name__=="__main__":
     for line in lines:
         piece=line.split()
         item_x=[float(j) for j in piece]
+        item_x[0]/=5.0
+        item_x[1]/=5.0
+        item_x[2]/=500.0
+        item_x[3]/=20.0
         item_x.append(1.0)
         t_X.append(item_x)
     tX=np.mat(t_X)
@@ -129,32 +154,3 @@ if __name__=="__main__":
     print("%.8f"%acc_0)
     print("Accurency with penalty:")
     print("%.8f"%acc_1)
-    plt.figure("MachineLearningProjectTwo")
-    one_data_x=[]
-    one_data_y=[]
-    zero_data_x=[]
-    zero_data_y=[]
-    for i in range(len(tlabel)):
-        if tlabel[i]==1:
-            one_data_x.append(t_X[i][0]);one_data_y.append(t_X[i][1])
-        else:
-            zero_data_x.append(t_X[i][0]);zero_data_y.append(t_X[i][1])
-    plt.plot(one_data_x,one_data_y,color='r',linestyle='',marker='.')
-    plt.plot(zero_data_x,zero_data_y,color='b',linestyle='',marker='.')
-    xxa=[]
-    yya=[]
-    p=0.01
-    while p<9.99:
-        xxa.append(p)
-        yya.append(-float((p*theta[0]+theta[2])/theta[1]))
-        p+=0.01
-    plt.plot(xxa,yya,color='g',linestyle='-',marker='')
-    xxa=[]
-    yya=[]
-    p=0.01
-    while p<9.99:
-        xxa.append(p)
-        yya.append(-float((p*theta_p[0]+theta_p[2])/theta_p[1]))
-        p+=0.01
-    plt.plot(xxa,yya,color='m',linestyle='-',marker='')
-    plt.show()

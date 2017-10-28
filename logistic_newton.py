@@ -130,8 +130,8 @@ if __name__=="__main__":
     tX=np.mat(t_X)
     #print(X)
     label=np.array(label)
-    result_0=tX*theta
-    result_1=tX*theta_p
+    result_0=sigmoid(tX*theta)
+    result_1=sigmoid(tX*theta_p)
     cnt=0
     for i in range(len(tlabel)):
         if (result_0[i]>0.5 and tlabel[i]==1)or(result_0[i]<0.5 and tlabel[i]==0)or(result_0[i]==0.5):

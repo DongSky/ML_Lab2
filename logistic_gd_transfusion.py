@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import argparse
 import random
 import math
-eps=1e-5
-alpha=1e-3
+eps=1e-6
+alpha=2e-4
 iteration=1000
 train_size=1000
 panel=1
@@ -32,7 +32,7 @@ def Eriri_with_panelty(y,calc_y,theta):
     return loss+math.sqrt(res)
 def BGD(matX,y):
     X=np.array(matX)
-    theta=np.mat(np.ones((X.shape[1],1)).reshape((X.shape[1],1)))
+    theta=np.mat(np.array([random.uniform(-1,1) for i in range(X.shape[1])]).reshape((X.shape[1],1)))
     eriri=0.0;cnt=1
     y=np.array(y).reshape(len(y),1)
     while True:
@@ -41,6 +41,7 @@ def BGD(matX,y):
         theta=theta-alpha*(X.T*(temp_x-y))
         #calculate the new loss
         temp_x=sigmoid(X*theta)
+        #print(temp_x)
         new_eriri=Eriri(y,temp_x)
         #output the current loss
         if cnt%1000==0:
@@ -51,7 +52,7 @@ def BGD(matX,y):
     return theta
 def BGD_penalty(matX,y):
     X=np.array(matX)
-    theta=np.mat(np.ones((X.shape[1],1)).reshape((X.shape[1],1)))
+    theta=np.mat(np.array([random.uniform(-1,1) for i in range(X.shape[1])]).reshape((X.shape[1],1)))
     eriri=0.0;cnt=1
     y=np.array(y).reshape(len(y),1)
     while True:
@@ -60,6 +61,7 @@ def BGD_penalty(matX,y):
         theta=theta-alpha*(X.T*(temp_x-y))
         #calculate the new loss
         temp_x=sigmoid(X*theta)
+        #print(temp_x)
         new_eriri=Eriri_with_panelty(y,temp_x,theta)
         #output the current loss
         if cnt%1000==0:
@@ -88,6 +90,10 @@ if __name__=="__main__":
     for line in lines:
         piece=line.split()
         item_x=[float(j) for j in piece]
+        item_x[0]/=5.0
+        item_x[1]/=5.0
+        item_x[2]/=500.0
+        item_x[3]/=20.0
         item_x.append(1.0)
         X.append(item_x)
     X=np.mat(X)
@@ -108,10 +114,14 @@ if __name__=="__main__":
     for line in lines:
         piece=line.split()
         item_x=[float(j) for j in piece]
+        item_x[0]/=5.0
+        item_x[1]/=5.0
+        item_x[2]/=500.0
+        item_x[3]/=20.0
         item_x.append(1.0)
         t_X.append(item_x)
     tX=np.mat(t_X)
-    #print(X)
+    #print(tX)
     label=np.array(label)
     result_0=sigmoid(tX*theta)
     result_1=sigmoid(tX*theta_p)
@@ -129,32 +139,3 @@ if __name__=="__main__":
     print("%.8f"%acc_0)
     print("Accurency with penalty:")
     print("%.8f"%acc_1)
-    plt.figure("MachineLearningProjectTwo")
-    one_data_x=[]
-    one_data_y=[]
-    zero_data_x=[]
-    zero_data_y=[]
-    for i in range(len(tlabel)):
-        if tlabel[i]==1:
-            one_data_x.append(t_X[i][0]);one_data_y.append(t_X[i][1])
-        else:
-            zero_data_x.append(t_X[i][0]);zero_data_y.append(t_X[i][1])
-    plt.plot(one_data_x,one_data_y,color='r',linestyle='',marker='.')
-    plt.plot(zero_data_x,zero_data_y,color='b',linestyle='',marker='.')
-    xxa=[]
-    yya=[]
-    p=0.01
-    while p<9.99:
-        xxa.append(p)
-        yya.append(-float((p*theta[0]+theta[2])/theta[1]))
-        p+=0.01
-    plt.plot(xxa,yya,color='g',linestyle='-',marker='')
-    xxa=[]
-    yya=[]
-    p=0.01
-    while p<9.99:
-        xxa.append(p)
-        yya.append(-float((p*theta_p[0]+theta_p[2])/theta_p[1]))
-        p+=0.01
-    plt.plot(xxa,yya,color='m',linestyle='-',marker='')
-    plt.show()
